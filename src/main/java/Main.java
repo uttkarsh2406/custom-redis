@@ -21,6 +21,13 @@ public class Main {
             if (nextLine.contains("PING")){
                 outputStream.write("+PONG\r\n".getBytes());
             }
+
+            if(nextLine.contains("ECHO")){
+
+                String respHeader= sc.nextLine();
+                String respBody=sc.nextLine();
+                outputStream.write(encodeRespString(respBody).getBytes());
+            }
         }
         System.out.println("==============================================================================");
     }
@@ -62,7 +69,7 @@ public class Main {
     public static String encodeRespString(String str) {
         String resp="$";
         resp += str.length();
-        rest+="\r\n";
+        resp += "\r\n";
         resp += str;
         resp += "\r\n";
         return resp;
