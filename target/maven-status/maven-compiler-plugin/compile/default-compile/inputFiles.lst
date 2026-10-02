@@ -1,13 +1,5 @@
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Service/CommandHandler.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Infra/ConnectionPool.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Service/ResponseDto.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Repository/Store.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Server/SlaveTcpServer.java
+/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/TcpServer.java
+/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Client.java
+/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/RespSerializer.java
 /Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Main.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Server/RedisConfig.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Repository/Value.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Server/MasterTcpServer.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Service/RespSerializer.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Infra/Client.java
-/Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Components/Infra/Slave.java
 /Users/uttkarshraj/Documents/redis-custom/code-redis/src/main/java/Config/AppConfig.java
