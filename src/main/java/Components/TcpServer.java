@@ -6,6 +6,7 @@ import Components.RespSerializer;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
+import Components.CommandHandler;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -19,6 +20,9 @@ public class TcpServer {
 
     @Autowired
     private RespSerializer respSerializer;
+
+    @Autowired
+    private CommandHandler commandHandler;
 
 
     public void handleClient(Client client) throws IOException {
@@ -39,7 +43,8 @@ public class TcpServer {
                 System.out.println("Deserialized bulk string...");
 
                 for (String[] cmd : commands) {
-                    handleCommand(cmd,client);
+                    System.out.println("Command: " + Arrays.toString(cmd));
+                    handleCommand(cmd, client);
                 }
             }
 
@@ -61,10 +66,25 @@ public class TcpServer {
         System.out.println("==============================================================================");
     }
 
-    public void handleCommand(String[] cmd,Client client) {
+    public void handleCommand(String[] cmd, Client client) throws IOException {
         System.out.println("======================================Command========================================");
-        for(String c : cmd){
-            System.out.println("Command: " + c);
+        String res = "";
+        switch (cmd[0]) {
+            case "PING":
+                res = commandHandler.ping(cmd);
+                break;
+            case "ECHO":
+                res = commandHandler.echo(cmd);
+                break;
+            case "SET":
+                res = commandHandler.set(cmd);
+                break;
+        }
+        System.out.println("Response: " + res.replace("\r", "\\r").replace("\n", "\\n"));
+
+        if (res != null && !res.isEmpty()) {
+            client.outputStream.write(res.getBytes());
+            client.outputStream.flush();
         }
     }
     // public static String encodeRespString(String str) {
