@@ -1,14 +1,10 @@
 import Config.AppConfig;
-import Components.TcpServer;
+
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Scanner;
-import java.util.concurrent.CompletableFuture;
+import Components.Server.TcpServer;
+
+
 
 public class Main {
 
@@ -19,9 +15,16 @@ public class Main {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
 
         TcpServer tcpServer = context.getBean(TcpServer.class);
-        tcpServer.start();
+        int port=6379;
+        for(int i=0; i<args.length; i++){
+            if(args[i].equals("--port")){
+                port = Integer.parseInt(args[i+1]);
+                break;
+            }
+        }
+        tcpServer.start(port);
 
-        
+        context.close();
     }
 
 }

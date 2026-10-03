@@ -2,6 +2,8 @@ package Components;
 
 import org.junit.jupiter.api.Test;
 
+import Components.Service.RespSerializer;
+
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,9 +43,5 @@ class RespSeriallizerTest {
         assertEquals("SET", result.getFirst()[0]);
         assertEquals("foo", result.getFirst()[1]);
         assertEquals("bar", result.getFirst()[2]);
-
-    //     assertEquals(1, result.get(1).length);
-    //     assertEquals("GET", result.get(1)[0]);
-    //     assertEquals("foo", result.get(1)[1]);
     }
 }

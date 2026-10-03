@@ -1,4 +1,4 @@
-package Components;
+package Components.Service;
 
 import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
@@ -8,7 +8,11 @@ import java.util.List;
 @Component
 public class RespSerializer {
     public String serializeBulkString(String str) {
-        return "+" + str + "\r\n";
+        int n=str.length();
+        String respHeader="$"+n;
+        String respData=str;
+        return respHeader + "\r\n" + respData + "\r\n";
+
     }
 
     public int getParts(char[] chars, int i, String[] result) {
@@ -34,6 +38,7 @@ public class RespSerializer {
     }
 
     public List<String[]> deserializeBulkString(byte[] command) {
+        
         String data = new String(command, StandardCharsets.UTF_8);
 
         char[] chars = data.toCharArray();

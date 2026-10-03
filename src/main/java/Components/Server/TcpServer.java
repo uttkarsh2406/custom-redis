@@ -1,20 +1,23 @@
-package Components;
+package Components.Server;
 
 import org.springframework.stereotype.Component;
+
+import Components.Service.CommandHandler;
+import Components.Service.RespSerializer;
+import infra.Client;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import Components.RespSerializer;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
-import Components.CommandHandler;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
-import Components.Client;
 
+@Slf4j 
 @Component
 public class TcpServer {
 
@@ -69,7 +72,7 @@ public class TcpServer {
     public void handleCommand(String[] cmd, Client client) throws IOException {
         System.out.println("======================================Command========================================");
         String res = "";
-        switch (cmd[0]) {
+        switch (cmd[0].toUpperCase()) {
             case "PING":
                 res = commandHandler.ping(cmd);
                 break;
@@ -79,6 +82,8 @@ public class TcpServer {
             case "SET":
                 res = commandHandler.set(cmd);
                 break;
+            case "GET":
+                res = commandHandler.get(cmd);
         }
         System.out.println("Response: " + res.replace("\r", "\\r").replace("\n", "\\n"));
 
@@ -96,18 +101,18 @@ public class TcpServer {
     //     return resp;
     // }
 
-    public void start() {
-        System.out.println("TcpServer started");
+    public void start(int port) {
+        log.info("TcpServer started");
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
-        int port = 6379;
+        log.info("Port: " + port);
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
             int id =0;
             while (true) {
                 ++id;
-                System.out.println("Waiting for client connection...");
+                log.info("Waiting for client connection...");
                 clientSocket = serverSocket.accept();
                 Socket finalClientSocket = clientSocket;
 
@@ -119,19 +124,19 @@ public class TcpServer {
                     try {
                         handleClient(client);
                     } catch (IOException e) {
-                        System.out.println("IOException: " + e.getMessage());
+                        log.info("IOException: " + e.getMessage());
                     }
                 });
             }
         } catch (IOException e) {
-            System.out.println("IOException " + e.getMessage());
+            log.error("IOException " + e.getMessage());
         } finally {
             try {
                 if (clientSocket != null) {
                     clientSocket.close();
                 }
             } catch (IOException e) {
-                System.out.println("IOException: " + e.getMessage());
+                log.error("IOException: " + e.getMessage());
             }
         }
     }
