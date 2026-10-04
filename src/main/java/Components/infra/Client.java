@@ -1,4 +1,4 @@
-package infra;
+package Components.infra;
 
 import java.net.Socket;
 import java.io.InputStream;

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 import Components.Service.CommandHandler;
 import Components.Service.RespSerializer;
-import infra.Client;
+import Components.infra.Client;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +17,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import Components.infra.ConnectionPool;
 @Slf4j 
 @Component
-public class TcpServer {
+
+public class SlaveTcpServer {
+
+    @Autowired
+    private RedisConfig redisConfig;
 
     @Autowired
     private RespSerializer respSerializer;
@@ -27,9 +32,11 @@ public class TcpServer {
     @Autowired
     private CommandHandler commandHandler;
 
+    @Autowired
+    private ConnectionPool connectionPool;
 
     public void handleClient(Client client) throws IOException {
-        
+        connectionPool.addClient(client);
         System.out.println("==============================================================================");
 
 
@@ -67,6 +74,9 @@ public class TcpServer {
         //     }
         // }
         System.out.println("==============================================================================");
+
+        connectionPool.removeClient(client);
+        connectionPool.removeSlave(client);
     }
 
     public void handleCommand(String[] cmd, Client client) throws IOException {
@@ -80,10 +90,17 @@ public class TcpServer {
                 res = commandHandler.echo(cmd);
                 break;
             case "SET":
-                res = commandHandler.set(cmd);
+                res = "-READONLY You can't write against replica.\r\n";
                 break;
             case "GET":
                 res = commandHandler.get(cmd);
+                break;
+            case "INFO":
+                res = commandHandler.info(cmd);
+                break;
+            case "REPLCONF":
+                res=commandHandler.replconf(cmd,client);
+                break;
         }
         System.out.println("Response: " + res.replace("\r", "\\r").replace("\n", "\\n"));
 
@@ -101,7 +118,62 @@ public class TcpServer {
     //     return resp;
     // }
 
-    public void start(int port) {
+
+    public void initSlaveConnection() {
+        try{
+            Socket master=new Socket(redisConfig.getMasterHost(), redisConfig.getMasterPort());
+            InputStream masterInputStream=master.getInputStream();
+            OutputStream masterOutputStream=master.getOutputStream();
+
+            byte[] data="*1\r\n$4\r\nPING\r\n".getBytes();
+
+            masterOutputStream.write(data);
+            masterOutputStream.flush();
+            byte [] inputBuffer=new byte[1024];
+            int bytesRead=masterInputStream.read(inputBuffer,0,inputBuffer.length);
+            String response=new String(inputBuffer,0,bytesRead);
+            log.info("Master response: " + response);
+
+            int lenListingPort=(redisConfig.getPort()+"").length();
+            int listeningPort= redisConfig.getPort();
+            String replconf="*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$" + lenListingPort + "\r\n" + listeningPort + "\r\n";
+            data=replconf.getBytes();
+            masterOutputStream.write(data);
+            masterOutputStream.flush();
+            bytesRead=masterInputStream.read(inputBuffer,0,inputBuffer.length);
+            response=new String(inputBuffer,0,bytesRead);
+            log.info("Master response: " + response);
+
+            replconf="*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
+            data=replconf.getBytes();
+            masterOutputStream.write(data);
+            masterOutputStream.flush();
+            bytesRead=masterInputStream.read(inputBuffer,0,inputBuffer.length);
+            response=new String(inputBuffer,0,bytesRead);
+            log.info("Master response: " + response);
+
+
+
+            String psync="*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
+            data=psync.getBytes();
+            masterOutputStream.write(data);
+            masterOutputStream.flush();
+            bytesRead=masterInputStream.read(inputBuffer,0,inputBuffer.length);
+            response=new String(inputBuffer,0,bytesRead);
+            log.info("Master response: " + response);
+
+
+            // handlePsyncResponse(response); 
+
+            master.close();
+        } catch (Exception e) {
+            log.error("Exception: " + e.getMessage());
+        }
+    }
+
+
+    public void start() {
+        int port = redisConfig.getPort();
         log.info("TcpServer started");
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
@@ -109,6 +181,13 @@ public class TcpServer {
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
+
+            CompletableFuture<Void> slaveConnectionFuture = CompletableFuture.runAsync(this::initSlaveConnection);
+
+            slaveConnectionFuture.thenRun(() -> {
+                log.info("Slave connection initialized");
+            });
+
             int id =0;
             while (true) {
                 ++id;

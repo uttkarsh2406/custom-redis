@@ -10,6 +10,10 @@ import java.util.Arrays;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+import Components.Server.RedisConfig;
+import Components.infra.ConnectionPool;
+import Components.infra.Client;
+import Components.infra.Slave;
 @Slf4j 
 @Component
 public class CommandHandler {
@@ -20,6 +24,12 @@ public class CommandHandler {
 
     @Autowired 
     private Store store;
+
+    @Autowired
+    private RedisConfig redisConfig;
+
+    @Autowired
+    private ConnectionPool connectionPool;
 
     public String ping(String[] cmd) {
         return "+PONG\r\n";
@@ -45,5 +55,45 @@ public class CommandHandler {
 
     public String get(String[] cmd) {
         return store.get(cmd[1]);
+    }
+
+    public String info(String[] cmd) {
+        int replicationFlag = Arrays.stream(cmd).toList().indexOf("replication");
+        if(replicationFlag != -1){
+            String role= "role:" + redisConfig.getRole();
+            String masterReplId= "master_repl_id:" + redisConfig.getMasterReplId();
+            String masterReplOffset= "master_repl_offset:" + redisConfig.getMasterReplOffset();
+
+            String info = role + "\r\n" + masterReplId + "\r\n" + masterReplOffset + "\r\n";
+
+            return respSerializer.serializeBulkString(info);
+        }
+        return "$-1\r\n";
+    }
+
+    public String replconf(String[] cmd, Client client) {
+        switch(cmd[1].toUpperCase()){
+            case "LISTENING-PORT":
+                connectionPool.removeSlave(client);
+                Slave slave=new Slave(client);
+                connectionPool.addSlave(slave);
+                return "+OK\r\n";
+            case "CAPA":
+                Slave sl=null;
+                for(Slave ss : connectionPool.getSlaves()){
+                    if(ss.connection.equals(client)){
+                        sl=ss;
+                        break;
+                    }
+                }
+                for(int i=0;i<cmd.length;i++){
+                    if(cmd[i].toUpperCase().equals("CAPA")){
+                        sl.capabilities.add(cmd[i+1]);
+                        break;
+                    }
+                }
+                return "+OK\r\n";
+        }
+        return "";
     }
 }
